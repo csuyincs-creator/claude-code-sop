@@ -56,7 +56,7 @@
 | 系统地区 / 语言 | 与 IP 国家一致 | 如 `en_US` / `en-US` |
 | DNS | 走隧道 | TUN Fake-IP 接管，DNS 必须落在隧道内（`198.18.x.x` 属正常） |
 
-![图 3 · 本机代理形态参考截图（敏感字样已打码）](assets/fig3.png)
+![图 3 · 本机代理形态参考截图](assets/fig3.png)
 
 ### 1.4 14 项体检合格状态
 
@@ -77,13 +77,15 @@
 | 13 | ASN 属性 | 住宅 ISP（如 AS7922 Comcast Cable Communications） |
 | 14 | 生态可达 | `claude.ai:403` / `api:401`（可达即可，未带凭证时 401 是正常响应） |
 
-![图 2 · 14 项体检报告样例（敏感字样已打码）](assets/fig2.png)
+![图 2 · 14 项体检报告样例](assets/fig2.png)
 
 ---
 
 ## 2. 阶段二：注册（指纹浏览器）
 
 ### 2.1 Profile 定位
+
+> 本 SOP 使用的指纹浏览器：[AdsPower](https://www.adspower.net/share/YlDHqR)（推荐链接，感谢支持）
 
 建一个**专用**指纹浏览器 profile，只做三件事：
 
@@ -175,4 +177,11 @@ python3 check_env.py        ← 14 项体检，Exit 0 才放行
 - 特性：14 项体检、并发执行（3–5 秒）、RFC 5389 STUN 协议解析、真正的 Block-on-Fail（存在致命 fail 即 `exit 1`，支持 `--allow-fail` 仅查看）、状态写入 `~/.claude-switcher/`（权限 0660）、历史 IP 轨迹留痕；
 - 设计经独立评审修复了 6 项隐患：假阳性 WebRTC 泄露误报、阻断失效（退出码恒 0）、跨境漂移漏检、串行等待过长、RFC 2544 Fake-IP 漏检、仅覆盖 Wi-Fi 的假设。
 
-![图 1 · claude-env-checker 技能设计与评审要点（敏感字样已打码）](assets/fig1.png)
+![图 1 · claude-env-checker 技能设计与评审要点](assets/fig1.png)
+
+### 获取与安装
+
+- 仓库内目录：`claude-env-checker/`（`SKILL.md` + `scripts/check_env.py`）；
+- 安装：把 `claude-env-checker/` 整个目录拷贝到对应 Agent 的技能目录（如 `~/.gemini/config/skills/` 或 `~/.claude/skills/`）；
+- 依赖：零外部 Python 依赖（纯标准库 + macOS 原生命令），仅支持 macOS；
+- 协议：MIT（见仓库 `LICENSE`）。

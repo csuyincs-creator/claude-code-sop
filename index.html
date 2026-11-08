@@ -138,8 +138,8 @@
     </tbody>
   </table></div>
   <figure>
-    <img src="assets/fig3.png" alt="本机代理形态参考截图（敏感字样已打码）" loading="lazy">
-    <figcaption>图 3 · 本机代理形态参考截图（敏感字样已打码）</figcaption>
+    <img src="assets/fig3.png" alt="本机代理形态参考截图" loading="lazy">
+    <figcaption>图 3 · 本机代理形态参考截图</figcaption>
   </figure>
 
   <h3>1.4 14 项体检合格状态</h3>
@@ -163,13 +163,14 @@
     </tbody>
   </table></div>
   <figure>
-    <img src="assets/fig2.png" alt="14 项体检报告样例（敏感字样已打码）" loading="lazy">
-    <figcaption>图 2 · 14 项体检报告样例（敏感字样已打码）</figcaption>
+    <img src="assets/fig2.png" alt="14 项体检报告样例" loading="lazy">
+    <figcaption>图 2 · 14 项体检报告样例</figcaption>
   </figure>
 
   <h2>2. 阶段二：注册（指纹浏览器）</h2>
 
   <h3>2.1 Profile 定位</h3>
+  <p><b>本 SOP 使用的指纹浏览器</b>：<a href="https://www.adspower.net/share/YlDHqR" target="_blank" rel="noopener">AdsPower</a>（推荐链接，感谢支持）</p>
   <p>建一个<b>专用</b>指纹浏览器 profile，只做三件事：</p>
   <ol>
     <li>Claude 网页对话；</li>
@@ -256,9 +257,17 @@ python3 check_env.py        ← 14 项体检，Exit 0 才放行
     <li>设计经独立评审修复了 6 项隐患：假阳性 WebRTC 泄露误报、阻断失效（退出码恒 0）、跨境漂移漏检、串行等待过长、RFC 2544 Fake-IP 漏检、仅覆盖 Wi-Fi 的假设。</li>
   </ul>
   <figure>
-    <img src="assets/fig1.png" alt="claude-env-checker 技能设计与评审要点（敏感字样已打码）" loading="lazy">
-    <figcaption>图 1 · claude-env-checker 技能设计与评审要点（敏感字样已打码）</figcaption>
+    <img src="assets/fig1.png" alt="claude-env-checker 技能设计与评审要点" loading="lazy">
+    <figcaption>图 1 · claude-env-checker 技能设计与评审要点</figcaption>
   </figure>
+
+  <h3>获取与安装</h3>
+  <ul>
+    <li>仓库内目录：<code>claude-env-checker/</code>（<code>SKILL.md</code> + <code>scripts/check_env.py</code>）；</li>
+    <li>安装：把 <code>claude-env-checker/</code> 整个目录拷贝到对应 Agent 的技能目录（如 <code>~/.gemini/config/skills/</code> 或 <code>~/.claude/skills/</code>）；</li>
+    <li>依赖：零外部 Python 依赖（纯标准库 + macOS 原生命令），仅支持 macOS；</li>
+    <li>协议：MIT（见仓库 <code>LICENSE</code>）。</li>
+  </ul>
 </main>
 <footer>
   配套项目：<a href="https://github.com/YOURSJEYO/claude-switcher">YOURSJEYO/claude-switcher</a> · 仓库内 README.md 与本页面内容一致
