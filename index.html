@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Code 使用全流程 SOP（IP 一致性版）</title>
+<meta name="description" content="基于 claude-switcher / claude-env-checker 的 Claude Code 使用环境一致性 SOP：住宅 IP、注册、付款、手机端与启动前体检">
+<style>
+  :root{
+    --bg:#f8f9fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+    --border:#e5e7eb; --accent:#2563eb; --accent-soft:#eff6ff;
+    --warn-bg:#fffbeb; --warn-border:#f59e0b; --code-bg:#f3f4f6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1420; --card:#161c2c; --text:#e5e7eb; --muted:#9ca3af;
+      --border:#2a3245; --accent:#60a5fa; --accent-soft:#17233c;
+      --warn-bg:#2a2310; --warn-border:#d97706; --code-bg:#1c2333;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:16px/1.75 -apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  main{max-width:900px; margin:0 auto; padding:40px 20px 80px}
+  header h1{font-size:30px; line-height:1.35; margin:0 0 10px}
+  header .meta{color:var(--muted); font-size:14px; margin:0 0 6px}
+  header .meta b{color:var(--text)}
+  h2{
+    font-size:22px; margin:44px 0 14px; padding-left:12px;
+    border-left:4px solid var(--accent); line-height:1.4;
+  }
+  h3{font-size:17px; margin:26px 0 10px}
+  p,li{font-size:15.5px}
+  ul{padding-left:22px}
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  hr{border:none; border-top:1px solid var(--border); margin:36px 0}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.9em; background:var(--code-bg); border-radius:5px; padding:2px 6px;
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.6;
+  }
+  pre code{background:none; padding:0}
+  table{
+    width:100%; border-collapse:collapse; font-size:14px; background:var(--card);
+    border:1px solid var(--border); border-radius:10px; overflow:hidden;
+  }
+  th,td{border-top:1px solid var(--border); padding:9px 12px; text-align:left; vertical-align:top}
+  thead th{border-top:none; background:var(--code-bg); font-weight:600; white-space:nowrap}
+  .table-wrap{overflow-x:auto; border-radius:10px}
+  figure{margin:18px 0 8px}
+  figure img{
+    width:100%; display:block; background:var(--card);
+    border:1px solid var(--border); border-radius:10px;
+  }
+  figcaption{color:var(--muted); font-size:13px; text-align:center; margin-top:8px}
+  .flow{display:flex; gap:10px; align-items:stretch; flex-wrap:wrap; margin:18px 0 6px}
+  .step{
+    flex:1 1 180px; background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:12px 14px;
+  }
+  .step b{display:block; font-size:14.5px; margin-bottom:2px}
+  .step span{color:var(--muted); font-size:13px}
+  .arrow{align-self:center; color:var(--muted); font-size:18px}
+  .callout{
+    background:var(--warn-bg); border:1px solid var(--warn-border); border-radius:10px;
+    padding:12px 16px; margin:14px 0; font-size:14.5px;
+  }
+  .callout b{color:var(--warn-border)}
+  footer{
+    max-width:900px; margin:0 auto; padding:0 20px 60px;
+    color:var(--muted); font-size:13.5px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Claude Code 使用全流程 SOP（IP 一致性版）</h1>
+    <p class="meta">前置依赖：<b>claude-env-checker</b> 技能 —— 基于开源项目 <a href="https://github.com/YOURSJEYO/claude-switcher">YOURSJEYO/claude-switcher</a> 衍生，14 项环境预检，Block-on-Fail。</p>
+    <p class="meta">本机基线形态：<b>全局代理 + TUN（虚拟网卡）模式</b>，永久不变。</p>
+  </header>
+
+  <h2>流程总览</h2>
+  <div class="flow">
+    <div class="step"><b>阶段一 · 准备 IP</b><span>干净住宅 IP，买完先自检</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>阶段二 · 注册</b><span>指纹浏览器 · OAuth 直登</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>阶段三 · 付款</b><span>同一 IP 付款 / 续费</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>阶段四 · 日常</b><span>启动前 14 项体检</span></div>
+  </div>
+  <p>全程只服务一件事：<b>出口 IP 一致</b>。平台一致性校验看的不是"有没有代理"，而是注册、收信、付款、日常对话、手机端这些行为像不像同一个地方的同一个人。</p>
+
+  <h2>0. 四条总原则</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>原则</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>一个账号，一条 IP</b></td><td>注册、收验证邮件、付款、日常对话、手机端，全部走同一条住宅出口 IP，全程不漂移</td></tr>
+      <tr><td>2</td><td><b>全局 + TUN，拒绝分流</b></td><td>全局模式保证没有进程直连；TUN（虚拟网卡）接管所有流量，包括不走系统代理的程序。规则模式下的意外直连、系统代理形态下的绕过，都是 IP 混用的来源</td></tr>
+      <tr><td>3</td><td><b>启动前必检</b></td><td>任何情况下，启动 Claude Code 之前先跑 <code>check_env.py</code>。存在任何致命 fail 项则退出码为 1，禁止带病启动（<code>--allow-fail</code> 只允许在"只查看"场景使用）</td></tr>
+      <tr><td>4</td><td><b>浏览器层少干预</b></td><td>网络层（TUN）已保证 IP / DNS 一致，指纹浏览器里不要再叠加额外的"防泄露"类增强开关，保持指纹自然</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>1. 阶段一：准备干净住宅 IP</h2>
+
+  <h3>1.1 选购要求</h3>
+  <ul>
+    <li><b>住宅 ASN</b>：ISP 家宽段（如 AS7922 Comcast），避开机房段（AWS / GCP / OVH）和商业 VPN 段；</li>
+    <li><b>独享优先</b>：避开多人共用的公共节点——共用人越多，这个 IP 的历史越脏；</li>
+    <li><b>国家固定</b>：注册地 = 付款地 = 日常使用地（本 SOP 以美国 US 为例），节点不乱跳；</li>
+    <li><b>UDP 行为心里有数</b>：节点未开放 UDP 时，STUN 探测无响应属于正常拦截，WebRTC 检查项为 WARN 可接受（未泄露真实 IP 即可）。</li>
+  </ul>
+
+  <h3>1.2 买完先做两道自检</h3>
+  <ul>
+    <li><b>网页检测</b>（DNS 泄露 / WebRTC 泄露 / IP 归属一次性看完）：<a href="https://ippure.com/en/Browser-WebRTC-Leak-Detect" target="_blank" rel="noopener">ippure.com/en/Browser-WebRTC-Leak-Detect</a></li>
+    <li><b>本机 14 项体检</b>：</li>
+  </ul>
+<pre><code>python3 ~/.gemini/config/skills/claude-env-checker/scripts/check_env.py</code></pre>
+
+  <h3>1.3 本机基线（一次配好，长期保持）</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>项</th><th>目标</th><th>做法</th></tr></thead>
+    <tbody>
+      <tr><td>代理模式</td><td>全局 + TUN</td><td>客户端里选「全局」+ 开启「虚拟网卡模式」（TUN）</td></tr>
+      <tr><td>IPv6</td><td>关闭</td><td><code>networksetup -setv6off "USB 10/100/1000 LAN"</code>（网卡名按实际改，Wi-Fi 则为 <code>"Wi-Fi"</code>）</td></tr>
+      <tr><td>时区</td><td>与 IP 国家一致</td><td>如 <code>America/New_York</code></td></tr>
+      <tr><td>系统地区 / 语言</td><td>与 IP 国家一致</td><td>如 <code>en_US</code> / <code>en-US</code></td></tr>
+      <tr><td>DNS</td><td>走隧道</td><td>TUN Fake-IP 接管，DNS 必须落在隧道内（<code>198.18.x.x</code> 属正常）</td></tr>
+    </tbody>
+  </table></div>
+  <figure>
+    <img src="assets/fig3.png" alt="本机代理形态参考截图（敏感字样已打码）" loading="lazy">
+    <figcaption>图 3 · 本机代理形态参考截图（敏感字样已打码）</figcaption>
+  </figure>
+
+  <h3>1.4 14 项体检合格状态</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>检查项</th><th>合格状态</th></tr></thead>
+    <tbody>
+      <tr><td>01</td><td>代理内核</td><td>Clash Verge / Clash 运行中</td></tr>
+      <tr><td>02</td><td>TUN 网卡</td><td>在线（已接管流量）</td></tr>
+      <tr><td>03</td><td>出口 IP</td><td>目标国家 IP</td></tr>
+      <tr><td>04</td><td>IP 与上次一致</td><td>一致（轨迹落盘 <code>~/.claude-switcher/</code>，权限 0660）</td></tr>
+      <tr><td>05</td><td>时区</td><td>与 IP 国家一致（如 <code>America/New_York</code>）</td></tr>
+      <tr><td>06</td><td>地区</td><td>如 <code>en_US</code></td></tr>
+      <tr><td>07</td><td>IPv6</td><td>已关闭</td></tr>
+      <tr><td>08</td><td>DNS 走隧道</td><td>Fake-IP 劫持（<code>198.18.x.x</code>）</td></tr>
+      <tr><td>09</td><td>WebRTC</td><td>UDP 无响应 / 未泄露真实 IP（节点不开 UDP 时 WARN 可接受）</td></tr>
+      <tr><td>10</td><td>代理保活</td><td>LaunchDaemon 在线</td></tr>
+      <tr><td>11</td><td>规则置顶</td><td>核心域名已被 Fake-IP 劫持</td></tr>
+      <tr><td>12</td><td>客户端语言</td><td><code>en-US</code></td></tr>
+      <tr><td>13</td><td>ASN 属性</td><td>住宅 ISP（如 AS7922 Comcast Cable Communications）</td></tr>
+      <tr><td>14</td><td>生态可达</td><td><code>claude.ai:403</code> / <code>api:401</code>（可达即可，未带凭证时 401 是正常响应）</td></tr>
+    </tbody>
+  </table></div>
+  <figure>
+    <img src="assets/fig2.png" alt="14 项体检报告样例（敏感字样已打码）" loading="lazy">
+    <figcaption>图 2 · 14 项体检报告样例（敏感字样已打码）</figcaption>
+  </figure>
+
+  <h2>2. 阶段二：注册（指纹浏览器）</h2>
+
+  <h3>2.1 Profile 定位</h3>
+  <p>建一个<b>专用</b>指纹浏览器 profile，只做三件事：</p>
+  <ol>
+    <li>Claude 网页对话；</li>
+    <li>Claude 注册；</li>
+    <li>Claude 邮箱收发（验证邮件）。</li>
+  </ol>
+  <p>其他任何网站、任何用途都不要进这个 profile。多账号 = 多 profile，一一对应。</p>
+
+  <h3>2.2 指纹配置</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>配置项</th><th>取值</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>WebRTC</td><td><b>禁用</b></td><td>指纹层彻底关掉 RTC，STUN 探测面为零</td></tr>
+      <tr><td>时区</td><td><b>基于 IP</b></td><td>时区跟随出口 IP，不自定义</td></tr>
+      <tr><td>地理位置</td><td><b>禁止</b></td><td>不暴露地理信息</td></tr>
+      <tr><td>语言</td><td><b>自定义</b></td><td><code>English (United States)</code> + <code>English</code></td></tr>
+      <tr><td>界面语言</td><td><b>自定义</b></td><td><code>English (United States)</code></td></tr>
+      <tr><td>分辨率</td><td><b>预定义</b></td><td>基于 User-Agent 推导，不随机</td></tr>
+      <tr><td>字体</td><td><b>默认</b></td><td>—</td></tr>
+      <tr><td>硬件噪音</td><td colspan="2">Canvas 关 · WebGL 图像 关 · AudioContext 关 · 媒体设备 Auto · ClientRects 开 · SpeechVoices 开</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><b>特别注意</b>：浏览器里若有「防 RTC 泄露」「防 DNS 泄露」这类<b>额外的</b>防泄露增强开关，<b>一律不开</b>。网络层已由 TUN 全局兜底、DNS 已走隧道，浏览器层再叠加只会制造异常指纹。</div>
+  <figure>
+    <img src="assets/fig4.png" alt="指纹浏览器配置" loading="lazy">
+    <figcaption>图 4 · 指纹浏览器配置</figcaption>
+  </figure>
+
+  <h3>2.3 注册动作</h3>
+  <ol>
+    <li>确认出口 IP 与历史一致（跑一次 <code>check_env.py</code>，或看面板）；</li>
+    <li>在该 profile 内用 <b>Google / Apple ID 直接 OAuth 注册</b>，不要单独用邮箱注册；</li>
+    <li>验证邮件在<b>同一个 profile</b> 里收——绝不切到系统浏览器、手机邮件 App 或任何其他环境收信；</li>
+    <li>注册完成前不切节点。</li>
+  </ol>
+
+  <h3>2.4 关于"养号"</h3>
+  <p>玄学养号（模拟浏览行为、隔几天再付款之类）见仁见智。本 SOP 不包含，本人也没有养。</p>
+
+  <h2>3. 阶段三：付款与续费</h2>
+  <ul>
+    <li><b>渠道</b>：Google Play（Android 端应用内订阅）或 Apple ID 礼品卡（iOS 端应用内订阅）；网页端付款可用 Google Pay；</li>
+    <li><b>铁律：付款会话的出口 IP 必须与注册 IP 完全一致</b>——同一节点、同一出口，付款前后都不切；</li>
+    <li><b>配套一致</b>：用来付款的 Google / Apple 账号地区、礼品卡区服，与 IP 国家保持一致（US IP → US 区账号 → US 区礼品卡）；</li>
+    <li>续费同理：每次续费都在同一 IP 下完成。</li>
+  </ul>
+
+  <h2>4. 阶段四：手机端（Claude Code 登录 / 套餐管理）</h2>
+  <ol>
+    <li><b>全局代理</b>：手机用 TUN 类客户端开<b>全局</b>模式，不要分应用分流；</li>
+    <li><b>时区</b>：跟随 IP 国家；</li>
+    <li><b>语言 / 地区</b>：系统语言、地区一并改掉，与 IP 国家一致；</li>
+    <li>登录和套餐管理都在这个状态下进行。</li>
+  </ol>
+
+  <h2>5. 日常：每次启动 Claude Code</h2>
+<pre><code>开代理（全局 + TUN）
+        ↓
+python3 check_env.py        ← 14 项体检，Exit 0 才放行
+        ↓
+启动 Claude Code</code></pre>
+  <ul>
+    <li>任何致命 fail → 按技能内的排障引导修复后重跑；<b>禁止</b>带 fail 强启（<code>--allow-fail</code> 仅限"只查看"场景）；</li>
+    <li>体检状态自动写入 <code>~/.claude-switcher/</code>，历史 IP 轨迹可追溯——发现 IP 漂移能第一时间定位。</li>
+  </ul>
+
+  <h2>6. 红线速查</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>场景</th><th>红线</th></tr></thead>
+    <tbody>
+      <tr><td>换节点</td><td>不要立刻使用账号；先确认新 IP 的国家与 ASN，IP 与上次不一致时先停下</td></tr>
+      <tr><td>收验证邮件</td><td>绝不在指纹浏览器之外的环境收</td></tr>
+      <tr><td>付款</td><td>IP 与注册 IP 不一致时不要付款</td></tr>
+      <tr><td>代理模式</td><td>分流 / 直连状态下不碰 Claude</td></tr>
+      <tr><td>IPv6</td><td>开着就是绕过 TUN 的暗门，必须关</td></tr>
+      <tr><td>体检</td><td><code>check_env.py</code> 有 fail 就不启动 Claude Code</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>附录：claude-env-checker 技能</h2>
+  <ul>
+    <li>位置：<code>~/.gemini/config/skills/claude-env-checker/</code>（<code>SKILL.md</code> + <code>scripts/check_env.py</code>）；</li>
+    <li>特性：14 项体检、并发执行（3–5 秒）、RFC 5389 STUN 协议解析、真正的 Block-on-Fail（存在致命 fail 即 <code>exit 1</code>，支持 <code>--allow-fail</code> 仅查看）、状态写入 <code>~/.claude-switcher/</code>（权限 0660）、历史 IP 轨迹留痕；</li>
+    <li>设计经独立评审修复了 6 项隐患：假阳性 WebRTC 泄露误报、阻断失效（退出码恒 0）、跨境漂移漏检、串行等待过长、RFC 2544 Fake-IP 漏检、仅覆盖 Wi-Fi 的假设。</li>
+  </ul>
+  <figure>
+    <img src="assets/fig1.png" alt="claude-env-checker 技能设计与评审要点（敏感字样已打码）" loading="lazy">
+    <figcaption>图 1 · claude-env-checker 技能设计与评审要点（敏感字样已打码）</figcaption>
+  </figure>
+</main>
+<footer>
+  YOURSJEYO · <a href="https://github.com/YOURSJEYO/claude-switcher">claude-switcher</a> 配套文档 · 仓库内 README.md 与本页面内容一致
+</footer>
+</body>
+</html>
